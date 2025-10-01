@@ -1,0 +1,15 @@
+Timestamp,Status,Barcode,Reference,Type
+2025-10-01 03:17:27.344,REFERENCE_SET,http://en.m.wikipedia.org,http://en.m.wikipedia.org,QRCODE
+2025-10-01 03:17:30.937,PASS,http://en.m.wikipedia.org,http://en.m.wikipedia.org,QRCODE
+2025-10-01 03:17:32.463,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:33.967,PASS,http://en.m.wikipedia.org,http://en.m.wikipedia.org,QRCODE
+2025-10-01 03:17:35.801,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:37.328,PASS,http://en.m.wikipedia.org,http://en.m.wikipedia.org,QRCODE
+2025-10-01 03:17:38.835,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:40.341,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:41.850,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:43.353,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:45.187,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:47.024,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:48.526,NO_BARCODE,,http://en.m.wikipedia.org,
+2025-10-01 03:17:50.054,NO_BARCODE,,http://en.m.wikipedia.org,
