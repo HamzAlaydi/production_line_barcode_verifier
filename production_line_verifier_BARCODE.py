@@ -18,7 +18,9 @@ import time
 import csv
 from datetime import datetime
 import os
-import winsound
+# import winsound  # Windows only - removed for Raspberry Pi
+import os
+import subprocess
 
 
 class BarcodeProductionVerifier:
@@ -75,24 +77,32 @@ class BarcodeProductionVerifier:
             ])
     
     def play_sound(self, sound_type):
-        """Play different sounds for different events (Windows only)."""
+        """Play different sounds for different events (Raspberry Pi compatible)."""
         try:
             if sound_type == 'success':
-                winsound.Beep(1000, 100)
+                # Short high beep for success
+                subprocess.run(['speaker-test', '-t', 'sine', '-f', '1000', '-l', '1'], 
+                             capture_output=True, timeout=1)
             elif sound_type == 'mismatch':
-                winsound.Beep(800, 200)
+                # Two medium beeps for mismatch
+                subprocess.run(['speaker-test', '-t', 'sine', '-f', '800', '-l', '1'], 
+                             capture_output=True, timeout=1)
                 time.sleep(0.1)
-                winsound.Beep(800, 200)
+                subprocess.run(['speaker-test', '-t', 'sine', '-f', '800', '-l', '1'], 
+                             capture_output=True, timeout=1)
             elif sound_type == 'no_barcode':
-                winsound.Beep(400, 500)
+                # Long low beep for no barcode
+                subprocess.run(['speaker-test', '-t', 'sine', '-f', '400', '-l', '1'], 
+                             capture_output=True, timeout=1)
             elif sound_type == 'reference_captured':
-                winsound.Beep(600, 100)
-                time.sleep(0.05)
-                winsound.Beep(800, 100)
-                time.sleep(0.05)
-                winsound.Beep(1000, 100)
+                # Three ascending beeps for reference capture
+                for freq in [600, 800, 1000]:
+                    subprocess.run(['speaker-test', '-t', 'sine', '-f', str(freq), '-l', '1'], 
+                                 capture_output=True, timeout=1)
+                    time.sleep(0.05)
         except Exception as e:
-            pass
+            # Fallback to console beep if speaker-test fails
+            print(f"\\a")  # ASCII bell character
     
     def preprocess_for_barcode(self, frame):
         """
@@ -540,10 +550,60 @@ class BarcodeProductionVerifier:
         print("STARTING CAMERA...")
         print("=" * 60)
         
-        # Initialize camera
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("[ERROR] Could not open camera!")
+        # Initialize camera - try different sources including phone camera
+        cap = None
+        camera_source = None
+        
+        # Try different camera sources
+        camera_sources = [
+            # Local USB cameras
+            *[i for i in range(10)],
+            # DroidCam - Your Samsung A32
+            "http://192.168.0.104:4747/video",  # Your DroidCam WiFi IP
+            "http://10.142.132.74:4747/video",  # Your DroidCam device IP
+            # Alternative DroidCam URLs
+            "http://192.168.0.104:4747/mjpegfeed?640x480",
+            "http://10.142.132.74:4747/mjpegfeed?640x480",
+            # IP Webcam alternatives (in case you switch)
+            "http://192.168.0.100:8080/video",
+            "http://192.168.0.101:8080/video",
+            "http://192.168.0.102:8080/video",
+            "http://192.168.0.103:8080/video",
+            "http://192.168.0.105:8080/video",
+        ]
+        
+        print("Searching for cameras...")
+        for source in camera_sources:
+            print(f"Trying camera source: {source}")
+            test_cap = cv2.VideoCapture(source)
+            if test_cap.isOpened():
+                ret, frame = test_cap.read()
+                if ret and frame is not None:
+                    print(f"[OK] Camera found: {source}")
+                    cap = test_cap
+                    camera_source = source
+                    break
+                else:
+                    test_cap.release()
+            else:
+                test_cap.release()
+        
+        if cap is None:
+            print("[ERROR] Could not find any working camera!")
+            print("Available video devices:")
+            for device in os.listdir('/dev'):
+                if device.startswith('video'):
+                    print(f"  /dev/{device}")
+            print("\n[INFO] To use your phone as camera:")
+            print("1. Install 'IP Webcam' app on your phone")
+            print("2. Connect phone to same WiFi as Raspberry Pi")
+            print("3. Start IP Webcam server on phone")
+            print("4. Note the IP address (e.g., 192.168.0.100:8080)")
+            print("5. Update the camera_sources list in the code")
+            print("\n[INFO] Running in DEMO MODE - No camera available")
+            print("This will simulate barcode detection for testing purposes.")
+            print("Press 'C' to simulate reference capture, 'S' to start demo mode.")
+            self.run_demo_mode()
             return
         
         # Set camera properties for maximum performance
@@ -663,6 +723,105 @@ class BarcodeProductionVerifier:
         
         print("\n[OK] System shutdown complete!")
         print(f"Full logs saved to: {self.log_file}")
+    
+    def run_demo_mode(self):
+        """Run in demo mode when no camera is available."""
+        print("\n" + "=" * 60)
+        print("DEMO MODE - BARCODE VERIFICATION SYSTEM")
+        print("=" * 60)
+        print("No camera detected. Running in simulation mode.")
+        print("\nDemo barcodes available:")
+        print("1. 1234567890123 (EAN13)")
+        print("2. 9876543210987 (EAN13 - different)")
+        print("3. NO_BARCODE (simulate missing barcode)")
+        print("\nControls:")
+        print("C - Simulate reference capture")
+        print("S - Start/Stop demo verification")
+        print("R - Reset reference")
+        print("L - View logs")
+        print("Q - Quit")
+        print("=" * 60)
+        
+        demo_barcodes = [
+            "1234567890123",
+            "9876543210987", 
+            "NO_BARCODE"
+        ]
+        current_demo_index = 0
+        
+        while True:
+            print(f"\nCurrent demo barcode: {demo_barcodes[current_demo_index]}")
+            print("Commands: C=Capture Ref, S=Start Demo, R=Reset, L=Logs, Q=Quit, N=Next Barcode")
+            
+            try:
+                command = input("Enter command: ").strip().lower()
+                
+                if command == 'q':
+                    break
+                elif command == 'c':
+                    if demo_barcodes[current_demo_index] != "NO_BARCODE":
+                        self.reference_barcode = demo_barcodes[current_demo_index]
+                        self.reference_type = "EAN13"
+                        print(f"\n[SUCCESS] REFERENCE CAPTURED: {self.reference_barcode}")
+                        self.log_result('REFERENCE_SET', self.reference_barcode, self.reference_type)
+                        self.play_sound('reference_captured')
+                    else:
+                        print("[ERROR] Cannot capture reference from NO_BARCODE")
+                        self.play_sound('no_barcode')
+                elif command == 's':
+                    if not self.reference_barcode:
+                        print("[WARNING] No reference set! Press 'C' first.")
+                        self.play_sound('no_barcode')
+                    else:
+                        self.production_mode = not self.production_mode
+                        if self.production_mode:
+                            print(f"\n[START] DEMO PRODUCTION MODE STARTED")
+                            print(f"Reference: {self.reference_barcode}")
+                        else:
+                            print("\n[PAUSE] DEMO PRODUCTION MODE PAUSED")
+                elif command == 'r':
+                    self.reference_barcode = None
+                    self.reference_type = None
+                    self.production_mode = False
+                    print("[OK] Reference reset")
+                elif command == 'l':
+                    self.view_logs()
+                elif command == 'n':
+                    current_demo_index = (current_demo_index + 1) % len(demo_barcodes)
+                    print(f"Switched to: {demo_barcodes[current_demo_index]}")
+                else:
+                    print("Invalid command. Use: C, S, R, L, Q, N")
+                
+                # Simulate production verification if in production mode
+                if self.production_mode and self.reference_barcode:
+                    current_barcode = demo_barcodes[current_demo_index]
+                    if current_barcode == "NO_BARCODE":
+                        self.stats['total_scans'] += 1
+                        self.stats['no_barcode'] += 1
+                        print(f"[ALERT] NO BARCODE DETECTED (Demo Scan #{self.stats['total_scans']})")
+                        self.log_result('NO_BARCODE', '', '')
+                        self.play_sound('no_barcode')
+                    elif current_barcode == self.reference_barcode:
+                        self.stats['total_scans'] += 1
+                        self.stats['passed'] += 1
+                        print(f"[PASS] (Demo Scan #{self.stats['total_scans']}): {current_barcode}")
+                        self.log_result('PASS', current_barcode, 'EAN13')
+                        self.play_sound('success')
+                    else:
+                        self.stats['total_scans'] += 1
+                        self.stats['mismatched'] += 1
+                        print(f"[ALERT] BARCODE MISMATCH (Demo Scan #{self.stats['total_scans']})")
+                        print(f"   Expected: {self.reference_barcode}")
+                        print(f"   Found:    {current_barcode}")
+                        self.log_result('MISMATCH', current_barcode, 'EAN13')
+                        self.play_sound('mismatch')
+                    
+                    time.sleep(1)  # Simulate scan interval
+                    
+            except KeyboardInterrupt:
+                break
+        
+        self.print_statistics()
 
 
 def main():

@@ -200,13 +200,22 @@ class I2CLCD:
     
     def print_message(self, line1="", line2=""):
         """Print a two-line message"""
-        self.clear()
-        if line1:
-            self.set_cursor(0, 0)
-            self.write_string(line1[:self.cols])
-        if line2:
-            self.set_cursor(1, 0)
-            self.write_string(line2[:self.cols])
+        try:
+            self.clear()
+            time.sleep(0.01)  # Small delay after clear
+            
+            if line1:
+                self.set_cursor(0, 0)
+                self.write_string(line1[:self.cols])
+                time.sleep(0.01)  # Small delay between lines
+                
+            if line2:
+                self.set_cursor(1, 0)
+                self.write_string(line2[:self.cols])
+                time.sleep(0.01)  # Small delay after writing
+                
+        except Exception as e:
+            print(f"Error printing message to LCD: {e}")
     
     def close(self):
         """Close I2C connection"""
