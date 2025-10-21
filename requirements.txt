@@ -1,0 +1,20 @@
+# Nexus Barcode Scanner - Dependencies
+# Python 3.7+
+
+# GUI Framework (usually pre-installed on Raspberry Pi OS)
+# tkinter - Standard library
+
+# Optional: For real camera integration (uncomment when needed)
+# opencv-python>=4.5.0
+# pyzbar>=0.1.9
+
+# Optional: For GPIO control (Raspberry Pi hardware)
+# RPi.GPIO>=0.7.1
+# gpiozero>=1.6.2
+
+# Configuration
+# configparser - Standard library (Python 3.2+)
+
+# No external dependencies required for basic operation!
+# All core functionality uses Python standard library.
+

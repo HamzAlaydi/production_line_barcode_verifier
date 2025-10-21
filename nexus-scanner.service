@@ -1,0 +1,43 @@
+[Unit]
+Description=Nexus Barcode Scanner - Production Ready GUI
+Documentation=file:///home/pi/barcode_scanner/README.md
+After=graphical.target network.target
+Wants=graphical.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/barcode_scanner
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/pi/.Xauthority"
+
+# Main command
+ExecStart=/usr/bin/python3 /home/pi/barcode_scanner/scanner_main.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nexus-scanner
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=1024
+
+[Install]
+WantedBy=graphical.target
+
+# Installation Instructions:
+# 1. Copy this file: sudo cp nexus-scanner.service /etc/systemd/system/
+# 2. Reload systemd: sudo systemctl daemon-reload
+# 3. Enable service: sudo systemctl enable nexus-scanner.service
+# 4. Start service: sudo systemctl start nexus-scanner.service
+# 5. Check status: sudo systemctl status nexus-scanner.service
+
